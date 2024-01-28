@@ -357,7 +357,7 @@ WORKDIR = query_db("SELECT workdir FROM meta", fetchOne=True)["workdir"]
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(message)s",
     level=logging.DEBUG,
-    filename=WORKDIR + "hestia.log"
+    # filename=WORKDIR + "hestia.log"
 )
 
 BOT = telegram.Bot(TOKEN)
