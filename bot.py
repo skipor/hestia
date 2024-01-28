@@ -58,7 +58,7 @@ async def get_sub_name(update, context):
 async def new_sub(update, context, reenable=False):
     name = await get_sub_name(update, context)
     log_msg = f"New subscriber: {name} ({update.effective_chat.id})"
-    logging.warning(log_msg)
+    logging.info(log_msg)
 #    await context.bot.send_message(chat_id=secrets.OWN_CHAT_ID, text=log_msg)
     
     # If the user existed before, then re-enable the telegram updates

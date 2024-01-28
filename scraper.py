@@ -32,6 +32,8 @@ async def main():
 
     targets = hestia.query_db("SELECT * FROM targets WHERE enabled = true")
 
+    logging.debug('Scarping targets...')
+
     for target in targets:
         try:
             await scrape_site(target)
@@ -55,6 +57,8 @@ async def broadcast(homes):
     agencies = hestia.query_db("SELECT agency, agency_name FROM targets")
     agencies = dict([(a["agency"], a["agency_name"]) for a in agencies])
     
+    messagesSent = 0
+
     for home in homes:
         for sub in subs:
             
@@ -74,8 +78,11 @@ async def broadcast(homes):
             # If a user blocks the bot, this would throw an error and kill the entire broadcast
             try:
                 await hestia.BOT.send_message(text=message, chat_id=sub["telegram_id"], parse_mode="MarkdownV2")
+                messagesSent += 1
             except:
                 pass
+    
+    logging.debug(f"Broadcast {messagesSent} messages to {len(subs)} people")
 
 async def scrape_site(target):
     agency = target["agency"]
@@ -111,6 +118,7 @@ async def scrape_site(target):
             home.agency,
             datetime.now().isoformat()))
 
+    logging.debug(f"Scraped {len(new_homes)} new homes")
     await broadcast(new_homes)
     
 
