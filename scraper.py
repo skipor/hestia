@@ -118,7 +118,7 @@ async def scrape_site(target):
             home.agency,
             datetime.now().isoformat()))
 
-    logging.debug(f"Scraped {len(new_homes)} new homes")
+    logging.debug(f"For target {agency}: scraped {len(new_homes)} new homes of {len(hestia.HomeResults(agency, r))} found homes")
     await broadcast(new_homes)
     
 
