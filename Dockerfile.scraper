@@ -10,12 +10,14 @@ RUN apt-get update && apt-get install cron procps -y && rm -rf /var/lib/apt/list
 RUN pip3 install -r requirements.txt
 
 COPY secrets.py secrets.py
+COPY scraper-entrypoint.sh /scraper-entrypoint.sh
+RUN chmod +x /scraper-entrypoint.sh
 COPY hestia.py hestia.py
 COPY scraper.py scraper.py
 
-RUN echo "*/5 * * * * root /usr/local/bin/python3 /scraper/scraper.py > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
+RUN echo "SHELL=/bin/bash\nBASH_ENV=/etc/environment\n*/1 * * * * root /usr/local/bin/python3 /scraper/scraper.py > /proc/1/fd/1 2>/proc/1/fd/2" >> /etc/crontab
 
 ARG APP_VERSION
 RUN sed -i "s/APP_VERSION = ''/APP_VERSION = '$APP_VERSION'/g" hestia.py
 
-CMD ["cron", "-f"]
+ENTRYPOINT ["sh", "/scraper-entrypoint.sh"]

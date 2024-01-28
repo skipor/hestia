@@ -6,7 +6,7 @@ import requests
 import re
 from psycopg2.extras import RealDictCursor
 from bs4 import BeautifulSoup
-from secrets import OWN_CHAT_ID, TOKEN, DB
+from secrets import TOKEN, DB_DB, DB_HOST, DB_USER, DB_PASSWORD, DB_PORT
 
 
 class Home:
@@ -320,11 +320,11 @@ class HomeResults:
 
 def query_db(query, params=[], fetchOne=False):
 # TODO error handling
-    db = psycopg2.connect(database=DB["database"],
-                            host=DB["host"],
-                            user=DB["user"],
-                            password=DB["password"],
-                            port=DB["port"])
+    db = psycopg2.connect(database=DB_DB,
+                            host=DB_HOST,
+                            user=DB_USER,
+                            password=DB_PASSWORD,
+                            port=DB_PORT)
     
     cursor = db.cursor(cursor_factory=RealDictCursor)
     cursor.execute(query, params)

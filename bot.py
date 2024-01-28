@@ -10,6 +10,8 @@ from telegram import Update
 from telegram.error import BadRequest
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
 from time import sleep
+from secrets import OWN_CHAT_ID
+
 
 def initialize():
     logging.warning("Initializing application...")
@@ -76,9 +78,13 @@ You will receive a message when I find a new home that matches your filters! If 
 If you have any issues or questions, let @WTFloris know!"""
     await context.bot.send_message(update.effective_chat.id, message)
 
+async def make_admin(update, context):
+    hestia.query_db("UPDATE subscribers SET user_level = 9 WHERE telegram_id = %s", params=[str(update.effective_chat.id)])
+    await context.bot.send_message(update.effective_chat.id, "You are now admin!")
+
 async def start(update, context):
     checksub = hestia.query_db("SELECT * FROM subscribers WHERE telegram_id = %s", params=[str(update.effective_chat.id)], fetchOne=True)
-    
+
     if checksub is not None:
         if checksub["telegram_enabled"]:
             message = "You are already a subscriber, I'll let you know if I see any new rental homes online!"
@@ -87,6 +93,9 @@ async def start(update, context):
             await new_sub(update, context, reenable=True)
     else:
         await new_sub(update, context)
+
+    if str(update.effective_chat.id) == OWN_CHAT_ID:
+        await make_admin(update, context)
 
 async def stop(update, context):
     checksub = hestia.query_db("SELECT * FROM subscribers WHERE telegram_id = %s", params=[str(update.effective_chat.id)], fetchOne=True)

@@ -1,0 +1,24 @@
+steps:
+  bot-build:
+    image: woodpeckerci/plugin-docker-buildx:2.1.0
+    settings:
+      registry: https://docker-registry.nas1.philipgroet.nl/v2/
+      repo: docker-registry.nas1.philipgroet.nl/hestia-bot
+      dockerfile: Dockerfile.bot
+      tags: [latest, main]
+      username: 
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+  
+  scraper-build:
+    image: woodpeckerci/plugin-docker-buildx:2.1.0
+    settings:
+      registry: https://docker-registry.nas1.philipgroet.nl/v2/
+      repo: docker-registry.nas1.philipgroet.nl/hestia-scraper
+      dockerfile: Dockerfile.bot
+      tags: [latest, main]
+      username: 
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
