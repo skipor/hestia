@@ -295,9 +295,11 @@ class HomeResults:
         for res in results:
             # Some listings don't have house numbers, so skip
             if "house_number" not in res["_source"]["address"].keys():
+                logging.warning("Skipping a house without house number")
                 continue
             # Some listings don't have a rent_price, skip as well
             if "rent_price" not in res["_source"]["price"].keys():
+                logging.warning("Skipping a house without price")
                 continue
         
             home = Home(agency="funda")
@@ -350,7 +352,7 @@ def escape_markdownv2(text):
     text = text.replace('*', '\*')
     return text
 
-WORKDIR = query_db("SELECT workdir FROM hestia.meta", fetchOne=True)["workdir"]
+WORKDIR = query_db("SELECT workdir FROM meta", fetchOne=True)["workdir"]
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(message)s",
@@ -374,7 +376,7 @@ SETTINGS_ID = "default"
 APP_VERSION = ''
 
 def check_dev_mode():
-    return query_db("SELECT devmode_enabled FROM hestia.meta", fetchOne=True)["devmode_enabled"]
+    return query_db("SELECT devmode_enabled FROM meta", fetchOne=True)["devmode_enabled"]
 
 def check_scraper_halted():
-    return query_db("SELECT scraper_halted FROM hestia.meta", fetchOne=True)["scraper_halted"]
+    return query_db("SELECT scraper_halted FROM meta", fetchOne=True)["scraper_halted"]

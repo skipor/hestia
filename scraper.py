@@ -19,7 +19,7 @@ async def main():
     
         # Check if the donation link is expiring soon
         # Expiry of ING payment links is 35 days, start warning after 32
-        last_updated = hestia.query_db("SELECT donation_link_updated FROM hestia.meta", fetchOne=True)["donation_link_updated"]
+        last_updated = hestia.query_db("SELECT donation_link_updated FROM meta", fetchOne=True)["donation_link_updated"]
         if datetime.now() - last_updated >= timedelta(days=32):
             message += "\n\nDonation link expiring soon, use /setdonate."
             
@@ -30,13 +30,14 @@ async def main():
         logging.warning("Scraper is halted.")
         exit()
 
-    targets = hestia.query_db("SELECT * FROM hestia.targets WHERE enabled = true")
+    targets = hestia.query_db("SELECT * FROM targets WHERE enabled = true")
 
     for target in targets:
         try:
             await scrape_site(target)
         except BaseException as e:
             error = f"[{target['agency']} ({target['id']})] {repr(e)}"
+            logging.error("Scrape failed of a target...")
             logging.error(error)
             
             if "Connection reset by peer" not in error:
@@ -51,8 +52,8 @@ async def broadcast(homes):
         subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true")
         
     # Create dict of agencies and their pretty names
-    agencies = hestia.query_db("SELECT agency, user_info FROM targets")
-    agencies = dict([(a["agency"], a["user_info"]["agency"]) for a in agencies])
+    agencies = hestia.query_db("SELECT agency, agency_name FROM targets")
+    agencies = dict([(a["agency"], a["agency_name"]) for a in agencies])
     
     for home in homes:
         for sub in subs:
@@ -93,7 +94,7 @@ async def scrape_site(target):
     new_homes = []
     
     # Check retrieved homes against previously scraped homes (of the last 6 months)
-    for home in hestia.query_db("SELECT address, city FROM hestia.homes WHERE date_added > now() - interval '180 day'"):
+    for home in hestia.query_db("SELECT address, city FROM homes WHERE date_added > now() - interval '180 day'"):
         prev_homes.append(hestia.Home(home["address"], home["city"]))
     
     for home in hestia.HomeResults(agency, r):
@@ -102,7 +103,7 @@ async def scrape_site(target):
 
     # Write new homes to database
     for home in new_homes:
-        hestia.query_db("INSERT INTO hestia.homes VALUES (%s, %s, %s, %s, %s, %s)",
+        hestia.query_db("INSERT INTO homes VALUES (%s, %s, %s, %s, %s, %s)",
             (home.url,
             home.address,
             home.city,

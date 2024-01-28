@@ -7,6 +7,8 @@ networks:
 volumes:
   hestia-database-volume-dev:
     name: hestia-database-volume-dev
+  hestia-data:
+    name: hestia-data
 
 services:
   hestia-bot-dev:
@@ -14,12 +16,15 @@ services:
     healthcheck:
       test: cat /proc/1/cmdline || exit 1
       start_period: 5s
-    image: wtfloris/hestia-bot:dev
+    build:
+      context: .
+      # target: development
+      dockerfile: ./Dockerfile.bot
     networks: 
       - hestia-network-dev
     restart: unless-stopped
     volumes:
-      - /root/hestia-dev/data:/data
+      - hestia-data:/data
     working_dir: /hestia
 
   hestia-scraper-dev:
@@ -27,21 +32,42 @@ services:
     healthcheck:
       test: pgrep cron || exit 1
       start_period: 5s
-    image: wtfloris/hestia-scraper:dev
+    build:
+      context: .
+      # target: development
+      dockerfile: ./Dockerfile.scraper
     networks: 
       - hestia-network-dev
     restart: unless-stopped
     volumes:
-      - /root/hestia-dev/data:/data
+      - hestia-data:/data
     working_dir: /scraper
 
   hestia-database-dev:
     container_name: hestia-database-dev
     image: postgres:latest
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=hestia
     networks: 
       - hestia-network-dev
     ports:
       - "127.0.0.1:54321:5432"
     restart: unless-stopped 
     volumes:
-      - hestia-database-volume-dev:/var/lib/postgresql/data
+      - ./docker/pgdb:/var/lib/postgresql/data
+      - ./db_init:/docker-entrypoint-initdb.d
+
+  hesta-pgadmin:
+    image: dpage/pgadmin4
+    container_name: hesta-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=a@a.com
+      - PGADMIN_DEFAULT_PASSWORD=verysecret
+      - PGADMIN_DISABLE_POSTFIX=YES
+    networks: 
+      - hestia-network-dev
+    volumes:
+      - ./docker/pgadmin:/var/lib/pgadmin
+    ports:
+      - 8080:80
