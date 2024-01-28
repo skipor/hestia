@@ -356,7 +356,7 @@ WORKDIR = query_db("SELECT workdir FROM meta", fetchOne=True)["workdir"]
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(message)s",
-    level=logging.WARNING,
+    level=logging.DEBUG,
     filename=WORKDIR + "hestia.log"
 )
 
