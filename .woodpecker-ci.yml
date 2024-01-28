@@ -5,7 +5,7 @@ steps:
       registry: https://docker-registry.nas1.philipgroet.nl/v2/
       repo: docker-registry.nas1.philipgroet.nl/hestia-bot
       dockerfile: Dockerfile.bot
-      tags: [latest, main]
+      tags: [latest, main, master]
       username: 
         from_secret: docker_username
       password:
@@ -17,7 +17,7 @@ steps:
       registry: https://docker-registry.nas1.philipgroet.nl/v2/
       repo: docker-registry.nas1.philipgroet.nl/hestia-scraper
       dockerfile: Dockerfile.bot
-      tags: [latest, main]
+      tags: [latest, main, master]
       username: 
         from_secret: docker_username
       password:
