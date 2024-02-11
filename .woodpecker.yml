@@ -1,7 +1,7 @@
 steps:
   bot-build:
     image: woodpeckerci/plugin-docker-buildx:2.1.0
-    depends_on: []
+    group: parallel
     settings:
       registry: https://docker-registry.nas1.philipgroet.nl/v2/
       repo: docker-registry.nas1.philipgroet.nl/hestia-bot
@@ -14,7 +14,7 @@ steps:
   
   scraper-build:
     image: woodpeckerci/plugin-docker-buildx:2.1.0
-    depends_on: []
+    group: parallel
     settings:
       registry: https://docker-registry.nas1.philipgroet.nl/v2/
       repo: docker-registry.nas1.philipgroet.nl/hestia-scraper
