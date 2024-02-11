@@ -175,6 +175,10 @@ async def websites(update, context):
         
     await context.bot.send_message(update.effective_chat.id, message[:-1])
     sleep(1)
+
+async def info(update, context):
+    message = "This tool is open source, its source code can be found at https://github.com/philipgroet/hestia. This tool is a fork of the bot made by wkfloris: https://github.com/wtfloris/hestia."
+    await context.bot.send_message(update.effective_chat.id, message)
     
 async def get_sub_info(update, context):
     if not privileged(update, context, "get_sub_info", check_only=False): return
@@ -442,6 +446,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("stop", stop))
     application.add_handler(CommandHandler("announce", announce))
     application.add_handler(CommandHandler("websites", websites))
+    application.add_handler(CommandHandler("info", info))
     application.add_handler(CommandHandler("filter", filter))
     application.add_handler(CommandHandler("filters", filter))
     application.add_handler(CommandHandler("getsubinfo", get_sub_info))
