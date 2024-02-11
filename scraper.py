@@ -5,6 +5,8 @@ import secrets
 from datetime import datetime, timedelta
 from asyncio import run
 
+from targets import scrapeAllTargets
+
 async def main():
     
     # Once a day at 7pm, check some stuff and send an alert if necessary
@@ -34,92 +36,7 @@ async def main():
 
     logging.debug('Scarping targets...')
 
-    for target in targets:
-        try:
-            await scrape_site(target)
-        except BaseException as e:
-            error = f"[{target['agency']} ({target['id']})] {repr(e)}"
-            logging.error("Scrape failed of a target...")
-            logging.error(error)
-            
-            if "Connection reset by peer" not in error:
-                await hestia.BOT.send_message(text=error, chat_id=secrets.OWN_CHAT_ID)
-
-async def broadcast(homes):
-    subs = set()
-    
-    if hestia.check_dev_mode():
-        subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true AND user_level > 1")
-    else:
-        subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true")
-        
-    # Create dict of agencies and their pretty names
-    agencies = hestia.query_db("SELECT agency, agency_name FROM targets")
-    agencies = dict([(a["agency"], a["agency_name"]) for a in agencies])
-    
-    messagesSent = 0
-
-    for home in homes:
-        for sub in subs:
-            
-            if home.price < sub["filter_min_price"] or home.price > sub["filter_max_price"]:
-                continue
-            
-            if home.city.lower() not in sub["filter_cities"]:
-                continue
-            
-            message = f"{hestia.HOUSE_EMOJI} {home.address}, {home.city}\n"
-            message += f"{hestia.EURO_EMOJI} €{home.price}/m\n\n"
-            
-            message = hestia.escape_markdownv2(message)
-            
-            message += f"{hestia.LINK_EMOJI} [{agencies[home.agency]}]({home.url})"
-            
-            # If a user blocks the bot, this would throw an error and kill the entire broadcast
-            try:
-                await hestia.BOT.send_message(text=message, chat_id=sub["telegram_id"], parse_mode="MarkdownV2")
-                messagesSent += 1
-            except:
-                pass
-    
-    logging.debug(f"Broadcast {messagesSent} messages to {len(subs)} people")
-
-async def scrape_site(target):
-    agency = target["agency"]
-    url = target["queryurl"]
-    headers = target["headers"]
-
-    if target["method"] == "GET":
-        r = requests.get(url, headers=headers)
-    elif target["method"] == "POST":
-        r = requests.post(url, json=target["post_data"], headers=headers)
-        
-    if not r.status_code == 200:
-        raise ConnectionError(f"Got a non-OK status code: {r.status_code}")
-    
-    prev_homes = []
-    new_homes = []
-    
-    # Check retrieved homes against previously scraped homes (of the last 6 months)
-    for home in hestia.query_db("SELECT address, city FROM homes WHERE date_added > now() - interval '180 day'"):
-        prev_homes.append(hestia.Home(home["address"], home["city"]))
-    
-    for home in hestia.HomeResults(agency, r):
-        if home not in prev_homes:
-            new_homes.append(home)
-
-    # Write new homes to database
-    for home in new_homes:
-        hestia.query_db("INSERT INTO homes VALUES (%s, %s, %s, %s, %s, %s)",
-            (home.url,
-            home.address,
-            home.city,
-            home.price,
-            home.agency,
-            datetime.now().isoformat()))
-
-    logging.debug(f"For target {agency}: scraped {len(new_homes)} new homes")
-    await broadcast(new_homes)
+    await scrapeAllTargets()
     
 
 if __name__ == '__main__':

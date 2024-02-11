@@ -7,7 +7,10 @@ import re
 from psycopg2.extras import RealDictCursor
 from bs4 import BeautifulSoup
 from secrets import TOKEN, DB_DB, DB_HOST, DB_USER, DB_PASSWORD, DB_PORT
+from datetime import datetime, timedelta
 
+import re
+import hestia
 
 class Home:
     def __init__(self, address='', city='', url='', agency='', price=-1):
@@ -21,7 +24,7 @@ class Home:
         return str(self)
         
     def __str__(self):
-        return f"{self.address}, {self.city} ({self.agency.title()})"
+        return f"Home({self.address}, {self.city}, {self.agency.title()}, {self.price}, {self.url})"
         
     def __eq__(self, other):
         if self.address.lower() == other.address.lower():
@@ -29,6 +32,27 @@ class Home:
                 return True
         return False
     
+    def validate(self):
+        assert type(self.address) is str
+        assert len(self.address) > 2
+
+        assert type(self.city) is str
+        assert len(self.city) > 2
+        
+        assert type(self.price) is float
+        assert self.price > 1
+
+        assert "https://" in self.url
+
+    def save(self):
+        hestia.query_db("INSERT INTO homes VALUES (%s, %s, %s, %s, %s, %s)",
+            (self.url,
+            self.address,
+            self.city,
+            self.price,
+            self.agency,
+            datetime.now().isoformat()))
+
     @property
     def address(self):
         return self._address
@@ -74,7 +98,6 @@ class Home:
             city = "Wijk bij Duurstede"
             
         self._parsed_city = city
-        
 
 class HomeResults:
     def __getitem__(self, n):
@@ -314,9 +337,10 @@ class HomeResults:
             home.city = res["_source"]["address"]["city"]
             home.url = "https://funda.nl" + res["_source"]["object_detail_page_relative_url"]
             home.price = res["_source"]["price"]["rent_price"][0]
-            
+
             self.homes.append(home)
-            
+
+
 
 def query_db(query, params=[], fetchOne=False):
 # TODO error handling
