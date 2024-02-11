@@ -11,6 +11,7 @@ from telegram.error import BadRequest
 from telegram.ext import filters, MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
 from time import sleep
 from secrets import OWN_CHAT_ID
+from targets import targets
 
 
 def initialize():
@@ -163,28 +164,17 @@ async def announce(update, context):
             continue
             
 async def websites(update, context):
-    targets = hestia.query_db("SELECT agency, website FROM targets WHERE enabled = true")
+    # targets = hestia.query_db("SELECT agency, website FROM targets WHERE enabled = true")
 
-    message = "Here are the websites I scrape every five minutes:\n\n"
-    
-    # Some agencies have multiple targets, but that's duplicate information for the user
-    already_included = []
+    message = "Here are the websites I scrape every minute:\n\n"
     
     for target in targets:
-        if target["agency"] in already_included:
-            continue
-            
-        already_included.append(target["agency"])
-        
-        message += f"Agency: {target['agency_name']}\n"
-        message += f"Website: {target['website']}\n"
+        message += f"Agency: {target.agency}\n"
+        # message += f"Website: {target['website']}\n"
         message += f"\n"
         
     await context.bot.send_message(update.effective_chat.id, message[:-1])
     sleep(1)
-    
-    message = "If you want more information, you can also read my source code: https://github.com/wtfloris/hestia"
-    await context.bot.send_message(update.effective_chat.id, message)
     
 async def get_sub_info(update, context):
     if not privileged(update, context, "get_sub_info", check_only=False): return
@@ -280,15 +270,14 @@ async def status(update, context):
     message += f"Current donation link: {donation_link['donation_link']}\n"
     message += f"Last updated: {donation_link['donation_link_updated']}\n"
 
-    targets = hestia.query_db("SELECT * FROM targets")
+    # targets = hestia.query_db("SELECT * FROM targets")
     message += "\n"
     message += "Targets (id): listings in past 7 days\n"
         
     for target in targets:
-        agency = target["agency"]
-        target_id = target["id"]
+        agency = target.agency
         count = hestia.query_db("SELECT COUNT(*) FROM homes WHERE agency = %s AND date_added > now() - '1 week'::interval", params=[agency], fetchOne=True)
-        message += f"{agency} ({target_id}): {count['count']} listings\n"
+        message += f"{agency} {count['count']} listings\n"
 
     await context.bot.send_message(update.effective_chat.id, message, disable_web_page_preview=True)
     
