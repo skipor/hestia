@@ -3,7 +3,7 @@ import logging
 
 def getEnv(key: str):
   if key in os.environ:
-    return os.environ
+    return os.environ[key]
   else:
     logging.warn(f"Config value {key} not found in env. Setting placeholder")
     return "PLACEHOLDER"
