@@ -5,6 +5,7 @@ import logging
 from bs4 import BeautifulSoup
 import re
 import requests
+from pprint import pformat
 
 from hestia import Home
 import hestia
@@ -29,6 +30,18 @@ class Target(ABC):
     self.save_homes(new_homes)
     logging.debug(f"For target {self.agency}: scraped {len(new_homes)} new homes")
     await self.broadcast(new_homes)
+
+  def testScrape(self):
+    logging.info(f"Testing scrape for target \"{self.agency}\"")
+    homes = self.retrieve()
+    for home in homes:
+      try:
+        home.validate()
+      except AssertionError:
+        logging.error(f"Home validate error for home: {home}", exc_info=True)
+
+    logging.debug(f"Homes found: {len(homes)}: \n{pformat(homes)}")
+    return homes
 
   async def broadcast(self, homes):
     subs = set()

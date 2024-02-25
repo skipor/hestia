@@ -1,10 +1,18 @@
 import os
+import logging
 
-OWN_CHAT_ID = os.environ['OWN_CHAT_ID'] # Obtained by messaging the bot and then checking https://api.telegram.org/bot<BOTID>/getUpdates
-TOKEN = os.environ['TOKEN'] # telegram
+def getEnv(key: str):
+  if key in os.environ:
+    return os.environ
+  else:
+    logging.warn(f"Config value {key} not found in env. Setting placeholder")
+    return "PLACEHOLDER"
 
-DB_DB = os.environ['DB_DB']
-DB_HOST = os.environ['DB_HOST']
-DB_USER = os.environ['DB_USER']
-DB_PASSWORD = os.environ['DB_PASSWORD']
-DB_PORT = os.environ['DB_PORT']
+OWN_CHAT_ID = getEnv('OWN_CHAT_ID') # Obtained by messaging the bot and then checking https://api.telegram.org/bot<BOTID>/getUpdates
+TOKEN = getEnv('TOKEN') # telegram
+
+DB_DB = getEnv('DB_DB')
+DB_HOST = getEnv('DB_HOST')
+DB_USER = getEnv('DB_USER')
+DB_PASSWORD = getEnv('DB_PASSWORD')
+DB_PORT = getEnv('DB_PORT')

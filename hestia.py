@@ -376,7 +376,7 @@ def escape_markdownv2(text):
     text = text.replace('*', '\*')
     return text
 
-WORKDIR = query_db("SELECT workdir FROM meta", fetchOne=True)["workdir"]
+# WORKDIR = query_db("SELECT workdir FROM meta", fetchOne=True)["workdir"]
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s]: %(message)s",

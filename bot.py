@@ -418,9 +418,10 @@ async def help(update, context):
     message = "*I can do the following for you:*\n"
     message += "/help - Show this message\n"
     message += "/start - Subscribe to updates\n"
-    message += "/stop - Stop recieving updates\n\n"
+    message += "/stop - Stop receiving updates\n\n"
     message += "/filter - Show and modify your personal filters\n"
     message += "/websites - Show info about the websites I scrape"
+    message += "/info - Show info about this bot and its creators"
     
     if privileged(update, context, "help", check_only=True):
         message += "\n\n"
