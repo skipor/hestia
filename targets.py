@@ -2021,6 +2021,40 @@ class Rebohuurwoning(Target):
         continue
 
     return homes
+  
+
+  # Same CMS as RosVerhuurMakelaar
+class SelectAHouse(Target):
+  agency = "selectahouse"
+
+  def retrieve(self) -> list[Home]:
+    link_base_url = "https://www.rosverhuurmakelaar.nl/woning"
+    url = "https://cdn.eazlee.com/eazlee/api/query_functions.php"
+    headers = {
+       "Content-Type": "application/x-www-form-urlencoded"
+    }
+    body = "action=all_houses&api=54d6755fb4708e526f3c1cf8feff51af&filter=status%3Drent%26sort%3Dnew&offsetRow=0&numberRows=99&leased_wr_last=true&leased_last=true&sold_wr_last=true&sold_last=true&path=%2Fwoningaanbod%3Fstatus%3Drent%26sort%3Dnew&html_lang=nl"
+    r = self.post(url, body, headers)
+    results = json.loads(r.content)
+
+    homes  = []
+    for res in results:
+      try:
+        home = Home(agency=self.agency)
+        if (res["forrent"] != "1"):
+          continue
+
+        home.address = f"{res['street']} {res['number']}"
+        home.city = res['city']
+        home.price = float(res['price'])
+        home.url = f"{link_base_url}?{home.city}/{res['street'].replace(' ', '-')}/{res['house_id']}" # this is the stupidest design I have seen....
+
+        homes.append(home)
+      except:
+        self.parseFailSingleHome(res)
+        continue
+
+    return homes
 
 targets = [
   Funda(),
@@ -2040,6 +2074,7 @@ targets = [
   Makelaardijstek(),
   Vbo(),
   Rebohuurwoning(),
+  SelectAHouse(),
 ]
 
 async def scrapeAllTargets():

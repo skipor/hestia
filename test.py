@@ -4,9 +4,9 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-from targets import Funda
+from targets import SelectAHouse
 
 
-target = Funda()
+target = SelectAHouse()
 
 homes = target.testScrape()
