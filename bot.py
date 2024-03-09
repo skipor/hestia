@@ -72,11 +72,7 @@ async def new_sub(update, context, reenable=False):
 
 I scrape real estate websites for new rental homes in The Netherlands. For more info on which websites I scrape, say /websites. To see and modify your personal filters, say /filter.
 
-Please note that some real estate websites provide their paid members with early access, so some of the homes I send you will be unavailable.
-
-You will receive a message when I find a new home that matches your filters! If you want me to stop, just say /stop.
-
-If you have any issues or questions, let @WTFloris know!"""
+You will receive a message when I find a new home that matches your filters! If you want me to stop, just say /stop."""
     await context.bot.send_message(update.effective_chat.id, message)
 
 async def make_admin(update, context):
