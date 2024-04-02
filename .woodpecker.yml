@@ -1,5 +1,7 @@
 steps:
   bot-build:
+    when:
+      - branch: master
     image: woodpeckerci/plugin-docker-buildx:2.1.0
     group: parallel
     settings:
@@ -13,6 +15,8 @@ steps:
         from_secret: docker_password
   
   scraper-build:
+    when:
+      - branch: master
     image: woodpeckerci/plugin-docker-buildx:2.1.0
     group: parallel
     settings:
