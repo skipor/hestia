@@ -16,6 +16,14 @@ services:
     healthcheck:
       test: cat /proc/1/cmdline || exit 1
       start_period: 5s
+    environment:
+      - OWN_CHAT_ID=AAA
+      - TOKEN=AAA
+      - DB_HOST=hestia-database-dev
+      - DB_PORT=5432
+      - DB_DB=hestia
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
     build:
       context: .
       # target: development
@@ -24,7 +32,7 @@ services:
       - hestia-network-dev
     restart: unless-stopped
     volumes:
-      - hestia-data:/data
+      - ./:/scraper
     working_dir: /hestia
 
   hestia-scraper-dev:
@@ -32,6 +40,14 @@ services:
     healthcheck:
       test: pgrep cron || exit 1
       start_period: 5s
+    environment:
+      - OWN_CHAT_ID=AAA
+      - TOKEN=AAA
+      - DB_HOST=hestia-database-dev
+      - DB_PORT=5432
+      - DB_DB=hestia
+      - DB_USER=postgres
+      - DB_PASSWORD=mysecretpassword
     build:
       context: .
       # target: development
@@ -40,7 +56,7 @@ services:
       - hestia-network-dev
     restart: unless-stopped
     volumes:
-      - hestia-data:/data
+      - ./:/scraper
     working_dir: /scraper
 
   hestia-database-dev:

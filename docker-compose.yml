@@ -21,6 +21,14 @@ services:
     volumes:
       - /root/hestia/data:/data
     working_dir: /hestia
+    environment:
+      - OWN_CHAT_ID=AAA
+      - TOKEN=AAA
+      - DB_HOST=hestia-database-dev
+      - DB_PORT=5432
+      - DB_DB=hestia
+      - DB_USER=postgres
+      - DB_PASSWORD=AAA
 
   hestia-scraper:
     container_name: hestia-scraper
@@ -34,6 +42,14 @@ services:
     volumes:
       - /root/hestia/data:/data
     working_dir: /scraper
+    environment:
+      - OWN_CHAT_ID=AAA
+      - TOKEN=AAA
+      - DB_HOST=hestia-database-dev
+      - DB_PORT=5432
+      - DB_DB=hestia
+      - DB_USER=postgres
+      - DB_PASSWORD=AAA
 
   hestia-database:
     container_name: hestia-database
