@@ -2074,6 +2074,10 @@ class WoningnetEemvallei(Target):
     homes  = []
     for res in results["data"]["PublicatieLijst"]["List"]:
       try:
+        # Skip homes which are not vrije sector
+        if res["PublicatieModel"] != "Vrije sector":
+          continue
+
         home = Home(agency=self.agency)
 
         home.address = f"{res['Adres']['Straatnaam']} {res['Adres']['Huisnummer']}"
