@@ -4,9 +4,9 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-from targets import WoningnetEemvallei
+from targets import IkWilHuren
 
 
-target = WoningnetEemvallei()
+target = IkWilHuren()
 
 homes = target.testScrape()

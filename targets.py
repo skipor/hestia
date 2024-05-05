@@ -2092,6 +2092,36 @@ class WoningnetEemvallei(Target):
 
     return homes
 
+class IkWilHuren(Target):
+  agency = "ikwilhuren"
+
+  def retrieve(self) -> list[Home]:
+    base_url = "https://ikwilhuren.nu"
+    url = base_url + "/aanbod/"
+    headers = {}
+    r = self.get(url, headers)
+    results = BeautifulSoup(r.content, "html.parser").find_all(class_="card-woning")
+
+    homes  = []
+    for res in results:
+      try:
+        home = Home(agency=self.agency)
+
+        home.address = res.find(class_="card-title").find("a").get_text().strip()
+        home.city = res.find(class_="card-body").findAll("span")[1].get_text().strip().split(" ")[1]
+        try: # € 855,- /mnd
+          home.price = float(res.findAll(class_="dotted-spans")[0].get_text().strip().split(" ")[1].split(",")[0].replace(".", ""))
+        except:
+          continue
+        home.url = base_url + res.find("a")["href"]
+
+        homes.append(home)
+      except:
+        self.parseFailSingleHome(res)
+        continue
+
+    return homes
+
 targets = [
   Funda(),
   Spotmakelaardij(),
@@ -2112,6 +2142,7 @@ targets = [
   Rebohuurwoning(),
   SelectAHouse(),
   WoningnetEemvallei(),
+  IkWilHuren(),
 ]
 
 async def scrapeAllTargets():
