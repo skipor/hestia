@@ -1,5 +1,7 @@
 # Hestia
 
+![CD](https://woodpecker-ci.nas1.philipgroet.nl/api/badges/2/status.svg)
+
 Hestia scrapes real estate websites for new rental listings, and broadcasts the results via Telegram. Check out @HestiaPhilipBot on Telegram: https://t.me/HestiaPhilipBot
 
 ## Dev install
