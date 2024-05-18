@@ -1727,6 +1727,7 @@ class Pararius(Target):
        'Cookie': "fl_mgc=SwSmlsNcYOXCeQrtyhjfKlRqMnzmeQVAEJRDeLKehwAEsEEj; fl_ctx=eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..theMRGPOt0IJMAxDdIg-og.tWZBc9xdK0EBYyHk_Lu7nGjiIJtWZgAQKoYyIASbDnb3Y5f1Gq93sx-c4fEqoqSC6XI2nFvgOsALZtOfXqPvs59bwV_zRqmd5wOngLplCTjjb97tWe785jUwUsM1s9LTvle4faGWom84FkKUTINccjjof-rnNJv0DQxPpKEuqZc8jAhW-F2yq5qi-6NHHBov0e-ya-NwPkt9Q6EiO95W7DYjjqqYZaQ-5y3ATaygVp4IuhxDIReokqQZY4CTqymCipHJJPjVCZGMngvgG5EfCAa-uZpN2KAn-kYc7d13Ti9wBg9lSKO8wA3Ao5e-YdQHsrdU5QffrPkAi9nCbhBBQRw530GFrVnYfSJtjxEjHIQwTtNyEzWOCDITGrDQp1Qqx8K3VE9NlzvHDEhiajsYEOilvmxAcYyaKfW3BBQ8s9_kppIQ-PvlFemW-fde9D0ah5IqyURagyDW3yRPoZBEpg.40dDiPC0EtGK5dfNJ3d8_w"
     }
     r = self.get(url, headers)
+    logging.info(r.content)
     results = BeautifulSoup(r.content, "html.parser").find_all("section", class_="listing-search-item listing-search-item--list listing-search-item--for-rent")
 
     homes  = []
@@ -2122,6 +2123,39 @@ class IkWilHuren(Target):
 
     return homes
 
+class WonenBijBouwInvest(Target):
+  agency = "bouwinvest"
+
+  def retrieve(self) -> list[Home]:
+    base_url = "https://www.wonenbijbouwinvest.nl"
+    url = base_url + "/api/search?order=recent&page=1"
+    headers = {}
+    r = self.get(url, headers)
+    results = json.loads(r.content)
+
+    homes  = []
+    for res in results["data"]:
+      try:
+        home = Home(agency=self.agency)
+
+        home.address = f"{res['name']}"
+        home.city = res['address']['city']
+        if 'price' in res['price']:
+          home.price = float(res['price']['price'])
+        elif 'from' in res['price']:
+          home.price = float(res['price']['from'])
+        else:
+          logging.debug("Skipping home without price", home)
+          continue
+        home.url = res['url']
+
+        homes.append(home)
+      except:
+        self.parseFailSingleHome(res)
+        continue
+
+    return homes
+
 targets = [
   Funda(),
   Spotmakelaardij(),
@@ -2131,7 +2165,7 @@ targets = [
   RosVerhuurMakelaar(),
   YourHouseNl(),
   VgwGroup(),
-  Pararius(),
+  # Pararius(), # Enabled cloudflare :(
   Interhouse(),
   Domvast(),
   Coverswonen(),
@@ -2143,6 +2177,7 @@ targets = [
   SelectAHouse(),
   WoningnetEemvallei(),
   IkWilHuren(),
+  WonenBijBouwInvest(),
 ]
 
 async def scrapeAllTargets():

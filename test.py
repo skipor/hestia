@@ -4,9 +4,9 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-from targets import IkWilHuren
+from targets import WonenBijBouwInvest
 
 
-target = IkWilHuren()
+target = WonenBijBouwInvest()
 
 homes = target.testScrape()
