@@ -1551,7 +1551,7 @@ class Huurwoningennl(Target):
 
   def retrieve(self) -> list[Home]:
     base_url = "https://www.huurwoningen.nl"
-    url = base_url + "/aanbod-huurwoningen/?interior=kaal"
+    url = base_url + "/aanbod-huurwoningen/"
     headers = {}
     r = self.get(url, headers)
     results = BeautifulSoup(r.content, "html.parser").find_all("li", class_="search-list__item search-list__item--listing")
