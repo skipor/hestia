@@ -106,8 +106,10 @@ class Target(ABC):
     new_homes = []
     
     # Check retrieved homes against previously scraped homes (of the last 6 months)
-    for home in hestia.query_db("SELECT address, city FROM homes WHERE date_added > now() - interval '180 day'"):
-        prev_homes.append(hestia.Home(home["address"], home["city"]))
+    for home in hestia.query_db("SELECT address, city, price FROM homes WHERE date_added > now() - interval '180 day'"):
+        p_home = hestia.Home(home["address"], home["city"])
+        p_home.price = home["price"]
+        prev_homes.append(p_home)
     
     for home in homes:
         if home not in prev_homes:

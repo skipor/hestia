@@ -29,7 +29,8 @@ class Home:
     def __eq__(self, other):
         if self.address.lower() == other.address.lower():
             if self.city.lower() == other.city.lower():
-                return True
+                if self.price == other.price:
+                    return True
         return False
     
     def validate(self):
