@@ -1466,11 +1466,7 @@ class Funda(Target):
 
     for res in results:
       try:
-        # Some listings don't have house numbers, so skip
-        if "house_number" not in res["_source"]["address"].keys():
-            logging.warning("Skipping a house without house number")
-            continue
-        # Some listings don't have a rent_price, skip as well
+        # Some listings don't have a rent_price, skip
         if "rent_price" not in res["_source"]["price"].keys():
             logging.warning("Skipping a house without price")
             continue
