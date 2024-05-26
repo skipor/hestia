@@ -279,7 +279,7 @@ async def status(update, context):
         count = hestia.query_db("SELECT COUNT(*) FROM homes WHERE agency = %s AND date_added > now() - '1 week'::interval", params=[agency], fetchOne=True)
         lastHome_q = hestia.query_db("SELECT date_added FROM homes WHERE agency = %s ORDER BY date_added DESC LIMIT 1", params=[agency], fetchOne=True)
         lastHome = lastHome_q["date_added"] if lastHome_q != None else ""
-        message += f"{agency}\t{count['count']} listings\t{lastHome['date_added']}\n"
+        message += f"{agency}\t{count['count']} listings\t{lastHome}\n"
 
     await context.bot.send_message(update.effective_chat.id, message, disable_web_page_preview=True)
     
