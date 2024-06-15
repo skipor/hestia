@@ -17,8 +17,8 @@ services:
       test: cat /proc/1/cmdline || exit 1
       start_period: 5s
     environment:
-      - OWN_CHAT_ID=AAA
-      - TOKEN=AAA
+      - OWN_CHAT_ID=79106136
+      - TOKEN=7090547905:AAFdCaOOJAcwkHK-kHmnzRr6PHAIy7OGY5Q
       - DB_HOST=hestia-database-dev
       - DB_PORT=5432
       - DB_DB=hestia
@@ -41,8 +41,8 @@ services:
       test: pgrep cron || exit 1
       start_period: 5s
     environment:
-      - OWN_CHAT_ID=AAA
-      - TOKEN=AAA
+      - OWN_CHAT_ID=79106136
+      - TOKEN=7090547905:AAFdCaOOJAcwkHK-kHmnzRr6PHAIy7OGY5Q
       - DB_HOST=hestia-database-dev
       - DB_PORT=5432
       - DB_DB=hestia
