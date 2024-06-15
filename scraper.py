@@ -19,20 +19,12 @@ async def main():
         if hestia.check_scraper_halted() and 'dev' not in hestia.APP_VERSION:
             message += "\n\nScraper is halted."
     
-        # Check if the donation link is expiring soon
-        # Expiry of ING payment links is 35 days, start warning after 32
-        last_updated = hestia.query_db("SELECT donation_link_updated FROM meta", fetchOne=True)["donation_link_updated"]
-        if datetime.now() - last_updated >= timedelta(days=32):
-            message += "\n\nDonation link expiring soon, use /setdonate."
-            
         if message:
             await hestia.BOT.send_message(text=message[2:], chat_id=secrets.OWN_CHAT_ID)
     
     if hestia.check_scraper_halted():
         logging.warning("Scraper is halted.")
         exit()
-
-    targets = hestia.query_db("SELECT * FROM targets WHERE enabled = true")
 
     logging.debug('Scarping targets...')
 
