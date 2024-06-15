@@ -97,7 +97,9 @@ class Home:
             city = "Berkel en Rodenrijs"
         elif city.lower() == "wijk bij duurstede":
             city = "Wijk bij Duurstede"
-            
+        elif city.lower() == "amstelveen":
+            city = "Amstelveen"
+
         self._parsed_city = city
 
 class HomeResults:
