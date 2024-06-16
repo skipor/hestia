@@ -124,41 +124,6 @@ async def reply(update, context):
         text="Sorry, I can't talk to you, I'm just a scraper. If you want to see what commands I support, say /help. If you are lonely and want to chat, try ChatGPT."
     )
 
-async def announce(update, context):
-    if not privileged(update, context, "announce", check_only=False): return
-        
-    if hestia.check_dev_mode():
-        subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true AND user_level > 1")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Dev mode is enabled, message not broadcasted to all subscribers.")
-    else:
-        subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true")
-
-    # Remove /announce
-    msg = update.message.text[10:]
-    
-    # Parse arguments
-    markdown = parse_argument(msg, "Markdown")
-    if markdown:
-        msg = markdown['text']
-    else:
-        markdown['value'] = False
-        
-    disablepreview = parse_argument(msg, "DisableLinkPreview")
-    if disablepreview:
-        msg = disablepreview['text']
-    else:
-        disablepreview['value'] = False
-
-    for sub in subs:
-        try:
-            if markdown['value']:
-                await context.bot.send_message(sub["telegram_id"], msg, parse_mode="MarkdownV2", disable_web_page_preview=disablepreview['value'])
-            else:
-                await context.bot.send_message(sub["telegram_id"], msg, disable_web_page_preview=disablepreview['value'])
-        except BaseException as e:
-            logging.warning(f"Exception while broadcasting announcement to {sub['telegram_id']}: {repr(e)}")
-            continue
-            
 async def websites(update, context):
     # targets = hestia.query_db("SELECT agency, website FROM targets WHERE enabled = true")
 
@@ -172,10 +137,7 @@ async def websites(update, context):
     await context.bot.send_message(update.effective_chat.id, message[:-1])
     sleep(1)
 
-async def info(update, context):
-    message = "This tool is open source, its source code can be found at https://github.com/philipgroet/hestia. This tool is a fork of the bot made by wkfloris: https://github.com/wtfloris/hestia."
-    await context.bot.send_message(update.effective_chat.id, message)
-    
+
 async def get_sub_info(update, context):
     if not privileged(update, context, "get_sub_info", check_only=False): return
         
@@ -265,10 +227,6 @@ async def status(update, context):
     message += "\n"
     message += f"Active subscriber count: {sub_count['count']}\n"
     
-    donation_link = hestia.query_db("SELECT donation_link, donation_link_updated FROM meta", fetchOne=True)
-    message += "\n"
-    message += f"Current donation link: {donation_link['donation_link']}\n"
-    message += f"Last updated: {donation_link['donation_link_updated']}\n"
 
     # targets = hestia.query_db("SELECT * FROM targets")
     message += "\n"
@@ -283,144 +241,13 @@ async def status(update, context):
 
     await context.bot.send_message(update.effective_chat.id, message, disable_web_page_preview=True)
     
-async def set_donation_link(update, context):
-    if not privileged(update, context, "setdonationlink", check_only=False): return
-    
-    link = update.message.text.split(' ')[1]
-    
-    hestia.query_db("UPDATE meta SET donation_link = %s, donation_link_updated = %s WHERE id = %s", params=[link, datetime.now().isoformat(), hestia.SETTINGS_ID])
-    
-    message = "Donation link updated."
-    await context.bot.send_message(update.effective_chat.id, message)
-    
-# TODO check if user is in db (and enabled)
-# TODO some restrictions on numeric filters: min, max etc
-async def filter(update, context):
-    try:
-        cmd = [token.lower() for token in update.message.text.split(' ')]
-    except AttributeError:
-        # This means the user edited a message, do nothing
-        return
-    
-    # '/filter' only
-    if len(cmd) == 1:
-        sub = hestia.query_db("SELECT * FROM subscribers WHERE telegram_id = %s", params=[str(update.effective_chat.id)], fetchOne=True)
-        
-        cities_str = ""
-        for c in sub["filter_cities"]:
-            cities_str += f"{c.title()}, "
-        
-        message = "*Currently, your filters are:*\n"
-        message += f"Min. price: {sub['filter_min_price']}\n"
-        message += f"Max. price: {sub['filter_max_price']}\n"
-        message += f"Cities: {cities_str[:-2]}\n\n"
-        message += "*To change your filters, you can say:*\n"
-        message += "`/filter minprice 1200`\n"
-        message += "`/filter maxprice 1800`\n"
-        message += "`/filter city add Amsterdam`\n"
-        message += "`/filter city remove Den Haag`\n\n"
-        message += "I will only send you homes in cities that you've included in your filter. Say  `/filter city`  to see the list of possible cities."
-        
-    # Set minprice filter
-    elif len(cmd) == 3 and cmd[1] in ["minprice", "min"]:
-        try:
-            minprice = int(cmd[2])
-        except ValueError:
-            message = f"Invalid value: {cmd[2]} is not a number."
-            await context.bot.send_message(update.effective_chat.id, message)
-            return
-            
-        hestia.query_db("UPDATE subscribers SET filter_min_price = %s WHERE telegram_id = %s", params=(minprice, str(update.effective_chat.id)))
-        
-        message = f"Minimum price filter set to {minprice}!"
-    
-    # Set maxprice filter
-    elif len(cmd) == 3 and cmd[1] in ["maxprice", "max"]:
-        try:
-            maxprice = int(cmd[2])
-        except ValueError:
-            message = f"Invalid value: {cmd[2]} is not a number."
-            await context.bot.send_message(update.effective_chat.id, message)
-            return
-            
-        hestia.query_db("UPDATE subscribers SET filter_max_price = %s WHERE telegram_id = %s", params=(maxprice, str(update.effective_chat.id)))
-        
-        message = f"Maximum price filter set to {maxprice}!"
-            
-    # View city possibilities
-    elif len(cmd) == 2 and cmd[1] == "city":
-        all_filter_cities = [c["city"] for c in hestia.query_db("SELECT DISTINCT city FROM homes")]
-        all_filter_cities.sort()
-        
-        message = "Supported cities for the city filter are:\n\n"
-        for city in all_filter_cities:
-            message += f"{city.title()}\n"
-            if len(message) > 4000:
-                await context.bot.send_message(update.effective_chat.id, message, parse_mode="Markdown")
-                message = ""
-            
-        message += "\nThis list is based on the cities I've seen so far while scraping, so it might not be fully complete."
-            
-    # Modify city filter
-    elif len(cmd) >= 4 and cmd[1] == "city" and cmd[2] in ["add", "remove", "rm", "delete", "del"]:
-        city = ""
-        for token in cmd[3:]:
-            # SQL injection is not possible here but you can call me paranoid that's absolutely fine
-            city += token.replace(';', '').replace('"', '').replace("'", '') + ' '
-        city = city[:-1]
-        
-        # Get cities currently in filter of subscriber
-        sub_filter_cities = hestia.query_db("SELECT filter_cities FROM subscribers WHERE telegram_id = %s", params=[str(update.effective_chat.id)], fetchOne=True)["filter_cities"]
-        
-        if cmd[2] == "add":
-            # Get possible cities from database
-            all_filter_cities = [c["city"] for c in hestia.query_db("SELECT DISTINCT city FROM homes")]
-            all_filter_cities.sort()
-            
-            # Check if the city is valid
-            if city not in [c.lower() for c in all_filter_cities]:
-                message = f"Invalid city: {city}\n\n"
-                message += "To see possible cities, say: `/filter city`"
-                await context.bot.send_message(update.effective_chat.id, message, parse_mode="Markdown")
-                return
-                
-            if city not in sub_filter_cities:
-                sub_filter_cities.append(city)
-            else:
-                message = f"{city.title()} is already in your filter, so nothing has been changed."
-                await context.bot.send_message(update.effective_chat.id, message)
-                return
-        
-            hestia.query_db("UPDATE subscribers SET filter_cities = %s WHERE telegram_id = %s", params=(sub_filter_cities, str(update.effective_chat.id)))
-            message = f"{city.title()} added to your city filter."
-        
-        else:
-            if city in sub_filter_cities:
-                sub_filter_cities.remove(city)
-            else:
-                message = f"{city.title()} is not in your filter, so nothing has been changed."
-                await context.bot.send_message(update.effective_chat.id, message)
-                return
-                
-            hestia.query_db("UPDATE subscribers SET filter_cities = %s WHERE telegram_id = %s", params=(sub_filter_cities, str(update.effective_chat.id)))
-            message = f"{city.title()} removed from your city filter."
-            
-            if len(sub_filter_cities) == 0:
-                message += "\n\nYour city filter is now empty, you will not receive messages about any homes."
-    else:
-        message = "Invalid filter command, say /filter to see options."
-        
-    await context.bot.send_message(update.effective_chat.id, message, parse_mode="Markdown")
-
 async def help(update, context):
     message = "*I can do the following for you:*\n"
     message += "/help - Show this message\n"
     message += "/start - Subscribe to updates\n"
     message += "/stop - Stop receiving updates\n\n"
-    message += "/filter - Show and modify your personal filters\n"
     message += "/websites - Show info about the websites I scrape"
-    message += "/info - Show info about this bot and its creators"
-    
+
     if privileged(update, context, "help", check_only=True):
         message += "\n\n"
         message += "*Admin commands:*\n"
@@ -432,7 +259,6 @@ async def help(update, context):
         message += "/resume - Resumes the scraper\n"
         message += "/dev - Enables dev mode\n"
         message += "/nodev - Disables dev mode\n"
-        message += "/setdonate - Sets the goodbye message donation link"
 
     await context.bot.send_message(update.effective_chat.id, message, parse_mode="Markdown")
 
@@ -443,11 +269,7 @@ if __name__ == '__main__':
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("stop", stop))
-    application.add_handler(CommandHandler("announce", announce))
     application.add_handler(CommandHandler("websites", websites))
-    application.add_handler(CommandHandler("info", info))
-    application.add_handler(CommandHandler("filter", filter))
-    application.add_handler(CommandHandler("filters", filter))
     application.add_handler(CommandHandler("getsubinfo", get_sub_info))
     application.add_handler(CommandHandler("getallsubs", get_all_subs))
     application.add_handler(CommandHandler("status", status))
@@ -455,7 +277,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("resume", resume))
     application.add_handler(CommandHandler("dev", enable_dev))
     application.add_handler(CommandHandler("nodev", disable_dev))
-    application.add_handler(CommandHandler("setdonate", set_donation_link))
     application.add_handler(CommandHandler("help", help))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reply))
     

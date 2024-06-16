@@ -43,6 +43,18 @@ class Target(ABC):
     logging.debug(f"Homes found: {len(homes)}: \n{pformat(homes)}")
     return homes
 
+  def customFilter(self, home : Home) -> bool:
+    if home.price < 1200 or home.price > 2700:
+      logging.debug(f"Home is not in price range: {home}")
+      return False
+
+    if home.city.lower() not in ["amstelveen", "amsterdam"]:
+      logging.debug(f"Home is not in allowed city list: {home}")
+      return False
+
+    return True
+
+
   async def broadcast(self, homes):
     subs = set()
 
@@ -54,26 +66,23 @@ class Target(ABC):
     messagesSent = 0
 
     for home in homes:
-        for sub in subs:
-            if home.price < sub["filter_min_price"] or home.price > sub["filter_max_price"]:
-                continue
+      if not self.customFilter(home):
+        continue
 
-            if home.city.lower() not in sub["filter_cities"]:
-                continue
+      message = f"{hestia.HOUSE_EMOJI} {home.address}, {home.city}\n"
+      message += f"{hestia.EURO_EMOJI} €{home.price}/m\n\n"
 
-            message = f"{hestia.HOUSE_EMOJI} {home.address}, {home.city}\n"
-            message += f"{hestia.EURO_EMOJI} €{home.price}/m\n\n"
+      message = hestia.escape_markdownv2(message)
 
-            message = hestia.escape_markdownv2(message)
+      message += f"{hestia.LINK_EMOJI} [{self.agency}]({home.url})"
 
-            message += f"{hestia.LINK_EMOJI} [{self.agency}]({home.url})"
-
-            # If a user blocks the bot, this would throw an error and kill the entire broadcast
-            try:
-                await hestia.BOT.send_message(text=message, chat_id=sub["telegram_id"], parse_mode="MarkdownV2")
-                messagesSent += 1
-            except:
-                pass
+      for sub in subs:
+          # If a user blocks the bot, this would throw an error and kill the entire broadcast
+          try:
+              await hestia.BOT.send_message(text=message, chat_id=sub["telegram_id"], parse_mode="MarkdownV2")
+              messagesSent += 1
+          except:
+              pass
 
     logging.debug(f"Broadcast {messagesSent} messages to {len(subs)} people")
 
@@ -1643,6 +1652,7 @@ class Vesteda(Target):
   def retrieve(self) -> list[Home]:
     link_base_url = "https://www.vesteda.com"
     url = "https://www.vesteda.com/api/units/search/facet"
+    # NOTE(skipor): custom filter turned in URL
     headers = {
       "Content-Type": "application/json",
       "Referer": "https://www.vesteda.com/en/unit-search?placeType=1&sortType=0&radius=3&s=Amstelveen,%20Nederland&sc=woning&latitude=52.348495150540856&longitude=4.8904783499999915&filters=0,6873,6883,6889,6899,6870,6972,6875,6898,6882,6872,6847&priceFrom=500&priceTo=9999",
@@ -2198,14 +2208,14 @@ class WonenBijBouwInvest(Target):
     return homes
 
 targets = [
-  Vesteda(),
-  Funda(),
+  Vesteda(), # NOTE(skipor): custom filter turned in URL
+  # Funda(), # TODO(skipor): Temporary, until filters implemented
   Spotmakelaardij(),
   Vbtverhuurmakelaars(),
-  Huurwoningennl(),
+  # Huurwoningennl(), # TODO(skipor): Temporary, until filters implemented
   DeKeizer(),
   RosVerhuurMakelaar(),
-  YourHouseNl(),
+  # YourHouseNl(), # ERRORs, utreht agency
   VgwGroup(),
   # Pararius(), # Enabled cloudflare :(
   Interhouse(),

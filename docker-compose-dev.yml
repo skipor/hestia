@@ -18,7 +18,7 @@ services:
       start_period: 5s
     environment:
       - OWN_CHAT_ID=79106136
-      - TOKEN=7090547905:AAFdCaOOJAcwkHK-kHmnzRr6PHAIy7OGY5Q
+      - TOKEN=7427391816:AAFBgx6BdDz6F6g9KJsdmtLEMyjV4pAu_4I
       - DB_HOST=hestia-database-dev
       - DB_PORT=5432
       - DB_DB=hestia
@@ -42,7 +42,7 @@ services:
       start_period: 5s
     environment:
       - OWN_CHAT_ID=79106136
-      - TOKEN=7090547905:AAFdCaOOJAcwkHK-kHmnzRr6PHAIy7OGY5Q
+      - TOKEN=7427391816:AAFBgx6BdDz6F6g9KJsdmtLEMyjV4pAu_4I
       - DB_HOST=hestia-database-dev
       - DB_PORT=5432
       - DB_DB=hestia
