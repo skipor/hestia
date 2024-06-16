@@ -11,7 +11,7 @@ from hestia import Home
 import hestia
 
 
-class Target(ABC):  
+class Target(ABC):
   agency: str
 
   @abstractmethod
@@ -45,36 +45,36 @@ class Target(ABC):
 
   async def broadcast(self, homes):
     subs = set()
-    
+
     if hestia.check_dev_mode():
         subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true AND user_level > 1")
     else:
         subs = hestia.query_db("SELECT * FROM subscribers WHERE subscription_expiry IS NOT NULL AND telegram_enabled = true")
-    
+
     messagesSent = 0
 
     for home in homes:
         for sub in subs:
             if home.price < sub["filter_min_price"] or home.price > sub["filter_max_price"]:
                 continue
-            
+
             if home.city.lower() not in sub["filter_cities"]:
                 continue
-            
+
             message = f"{hestia.HOUSE_EMOJI} {home.address}, {home.city}\n"
             message += f"{hestia.EURO_EMOJI} €{home.price}/m\n\n"
-            
+
             message = hestia.escape_markdownv2(message)
-            
+
             message += f"{hestia.LINK_EMOJI} [{self.agency}]({home.url})"
-            
+
             # If a user blocks the bot, this would throw an error and kill the entire broadcast
             try:
                 await hestia.BOT.send_message(text=message, chat_id=sub["telegram_id"], parse_mode="MarkdownV2")
                 messagesSent += 1
             except:
                 pass
-    
+
     logging.debug(f"Broadcast {messagesSent} messages to {len(subs)} people")
 
   def post(self, url, body, headers):
@@ -84,9 +84,9 @@ class Target(ABC):
       raise ConnectionError(f"Got a non-OK status code: {r.status_code}")
 
     return r
-  
+
   def parseFailSingleHome(self, res):
-    logging.info(f"{self.agency} failed to parse a home {res}", exc_info=True)
+    logging.warning(f"{self.agency} failed to parse a home {res}", exc_info=True)
 
   def get(self, url, headers):
     r = requests.get(url, headers=headers)
@@ -95,7 +95,7 @@ class Target(ABC):
       raise ConnectionError(f"Got a non-OK status code: {r.status_code}")
 
     return r
-  
+
   def save_homes(self, homes: list[Home]):
     for home in homes:
       home.save()
@@ -104,12 +104,12 @@ class Target(ABC):
   def filterOld(self, homes: list[Home]) -> list[Home]:
     prev_homes = []
     new_homes = []
-    
+
     # Check retrieved homes against previously scraped homes (of the last 6 months)
     for home in hestia.query_db("SELECT address, city, url, agency, price FROM homes WHERE date_added > now() - interval '180 day'"):
         p_home = hestia.Home(home["address"], home["city"], home["url"], home["agency"], home["price"])
         prev_homes.append(p_home)
-    
+
     for home in homes:
         if home not in prev_homes:
             new_homes.append(home)
@@ -1458,10 +1458,10 @@ class Funda(Target):
           "suggestionAnalytics": true
         }
       }'''
-    
+
     r = self.post(url, post_data, headers)
     results = json.loads(r.content)["search_result"]["hits"]["hits"]
-    
+
     homes: list[Home] = []
 
     for res in results:
@@ -1470,20 +1470,20 @@ class Funda(Target):
         if "rent_price" not in res["_source"]["price"].keys():
             logging.warning("Skipping a house without price")
             continue
-    
+
         home = Home(agency=self.agency)
-        
+
         home.address = f"{res['_source']['address']['street_name']} {res['_source']['address']['house_number']}"
         if "house_number_suffix" in res["_source"]["address"].keys():
             suffix = res["_source"]["address"]["house_number_suffix"]
             if '-' not in suffix and '+' not in suffix:
                 suffix = f" {suffix}"
             home.address += f"{suffix}"
-        
+
         home.city = res["_source"]["address"]["city"]
         home.url = "https://funda.nl" + res["_source"]["object_detail_page_relative_url"]
         home.price = float(res["_source"]["price"]["rent_price"][0])
-        
+
         homes.append(home)
       except:
         self.parseFailSingleHome(res)
@@ -1516,7 +1516,7 @@ class Spotmakelaardij(Target):
 
 
     return homes
-  
+
 class Vbtverhuurmakelaars(Target):
   agency = "vbt"
 
@@ -1542,7 +1542,7 @@ class Vbtverhuurmakelaars(Target):
 
 
     return homes
-  
+
 class Huurwoningennl(Target):
   agency = "huurwoningennl"
 
@@ -1636,7 +1636,51 @@ class RosVerhuurMakelaar(Target):
         continue
 
     return homes
-  
+
+class Vesteda(Target):
+  agency = "vesteda"
+
+  def retrieve(self) -> list[Home]:
+    link_base_url = "https://www.vesteda.com"
+    url = "https://www.vesteda.com/api/units/search/facet"
+    headers = {
+      "Content-Type": "application/json",
+      "Referer": "https://www.vesteda.com/en/unit-search?placeType=1&sortType=0&radius=3&s=Amstelveen,%20Nederland&sc=woning&latitude=52.32954207727795&longitude=4.871770866748051&filters=0,6873,6883,6889,6899,6870,6972,6875,6898,6882,6872,6847&priceFrom=500&priceTo=9999",
+    }
+    body = '{"filters":[0,6873,6883,6889,6899,6870,6972,6875,6898,6882,6872,6847],"latitude":52.32954207727795,"longitude":4.871770866748051,"place":"Amstelveen, Nederland","placeObject":{"placeType":"1","name":"Amstelveen, Nederland","latitude":"52.32954207727795","longitude":"4.871770866748051"},"placeType":1,"radius":5,"sorting":0,"priceFrom":500,"priceTo":9999,"language":"en"}'
+    r = self.post(url, body, headers)
+    results = json.loads(r.content)["results"]["objects"]
+
+    homes = []
+    for res in results:
+      try:
+        home = Home(agency=self.agency)
+
+        # Unavailable
+        if res["status"] != 1:
+          continue
+
+        # I don't think seniors are really into Telegram
+        if res["onlySixtyFivePlus"]:
+          continue
+
+        home = Home(agency="vesteda")
+        home.address = f"{res['street']} {res['houseNumber']}"
+        if res["houseNumberAddition"] is not None:
+          home.address += f"{res['houseNumberAddition']}"
+        home.postalCode = res["postalCode"]
+        home.city = res["city"]
+        home.url = link_base_url + res["url"]
+        home.price = res["priceUnformatted"]
+        home.numberOfBedRooms = res["numberOfBedRooms"]
+
+        homes.append(home)
+      except:
+        self.parseFailSingleHome(res)
+        continue
+
+    return homes
+
 class YourHouseNl(Target):
   agency = "yourhousenl"
 
@@ -1790,7 +1834,7 @@ class Interhouse(Target):
         continue
 
     return homes
-   
+
 # Similar to dekeizer cms
 class Domvast(Target):
   agency = "domvast"
@@ -1820,7 +1864,7 @@ class Domvast(Target):
         continue
 
     return homes
-  
+
 class Coverswonen(Target):
   agency = "coverswonen"
 
@@ -1870,7 +1914,7 @@ class Starthousing(Target):
     r = self.post(url, body, headers)
     results = BeautifulSoup(r.content, "html.parser").find("div", class_="object_list")
     results = results.find_all(class_="object")
-      
+
 
     homes  = []
     for res in results:
@@ -1941,7 +1985,7 @@ class Makelaardijstek(Target):
 
         if "Nieuw in verhuur" not in res.find(class_="object_status").get_text():
           continue
-        
+
         title = res.find(class_="object_address").find("h2").get_text().strip() # Te huur: Lauwerhof 25, 3512VD Utrecht
         title = title.split(": ")[1] # Lauwerhof 25, 3512VD Utrecht
 
@@ -2019,7 +2063,7 @@ class Rebohuurwoning(Target):
         continue
 
     return homes
-  
+
 
   # Same CMS as RosVerhuurMakelaar
 class SelectAHouse(Target):
