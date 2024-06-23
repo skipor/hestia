@@ -7,7 +7,7 @@ logging.basicConfig(
 from targets import *
 
 
-target = Vesteda()
+target = VanDerLinden()
 
 homes = target.testScrape()
 # print(homes)

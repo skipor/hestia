@@ -24,7 +24,7 @@ class Home:
         return str(self)
         
     def __str__(self):
-        return f"Home({self.address}, {self.city}, {self.agency.title()}, {self.price}, {self.url})"
+        return f"Home('{self.address}', '{self.city}', '{self.agency.title()}', {self.price}, '{self.url}')"
         
     def __eq__(self, other):
         if self.address.lower() == other.address.lower():

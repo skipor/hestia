@@ -34,13 +34,20 @@ class Target(ABC):
   def testScrape(self):
     logging.info(f"Testing scrape for target \"{self.agency}\"")
     homes = self.retrieve()
+
+    filtered = []
     for home in homes:
+
       try:
         home.validate()
       except AssertionError:
         logging.error(f"Home validate error for home: {home}", exc_info=True)
+      if self.customFilter(home):
+        filtered.append(home)
 
     logging.debug(f"Homes found: {len(homes)}: \n{pformat(homes)}")
+
+    logging.debug(f"Filtered homes: {len(filtered)}: \n{pformat(filtered)}")
     return homes
 
   def customFilter(self, home : Home) -> bool:
@@ -86,8 +93,8 @@ class Target(ABC):
 
     logging.debug(f"Broadcast {messagesSent} messages to {len(subs)} people")
 
-  def post(self, url, body, headers):
-    r = requests.post(url, data=body, headers=headers)
+  def post(self, url, body, headers, **kwargs):
+    r = requests.post(url, data=body, headers=headers, **kwargs)
 
     if not r.status_code == 200:
       raise ConnectionError(f"Got a non-OK status code: {r.status_code}")
@@ -97,8 +104,8 @@ class Target(ABC):
   def parseFailSingleHome(self, res):
     logging.warning(f"{self.agency} failed to parse a home {res}", exc_info=True)
 
-  def get(self, url, headers):
-    r = requests.get(url, headers=headers)
+  def get(self, url, headers, **kwargs):
+    r = requests.get(url, headers=headers, *kwargs)
 
     if not r.status_code == 200:
       raise ConnectionError(f"Got a non-OK status code: {r.status_code}")
@@ -1691,6 +1698,67 @@ class Vesteda(Target):
 
     return homes
 
+class VanDerLinden(Target):
+  agency = "vanderlinden"
+  cookies = {}
+  def retrieve(self) -> list[Home]:
+    if True:  # TODO check cookies
+      req = requests.post("https://www.vanderlinden.nl/woning-huren/", data="zoekterm=Amsterdam&min-prijs=1200&max-prijs=5000")
+      if not req.status_code == 200:
+        raise ConnectionError(f"Got a non-200 status code: {req.status_code}")
+      self.cookies = req.cookies
+
+    link_base_url = "https://www.vanderlinden.nl/"
+    url = "https://www.vanderlinden.nl/woning-huren"
+    # NOTE(skipor): custom filter turned in URL
+    response = self.get(url, {}, cookies=self.cookies)
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    body_element = soup.find('body', {'id': 'vv4', 'class': 'topmarge'})
+    if not body_element:
+      raise AssertionError("Element with id 'vv4' and class 'topmarge' not found.")
+
+    blok4 = body_element.find('div', {'id': 'blok4', 'class': 'blok eenkolom'})
+    if not blok4:
+      raise AssertionError("Element with id 'blok4' and class 'blok eenkolom' not found.")
+
+    aanbod = blok4.find('div', {'id': 'aanbod', 'class': 'wrapper'})
+    if not aanbod:
+      raise AssertionError("Element with id 'aanbod' and class 'wrapper' not found.")
+
+    zoekresultaten = aanbod.find('div', {'id': 'zoekresultaten'})
+    if not zoekresultaten:
+      raise AssertionError("Element with id 'zoekresultaten' not found.")
+
+    zoekresultaten_list = zoekresultaten.find_all('div', {'class': 'zoekresultaat zoekresultaat3kol'})
+
+    homes = []
+    for res in zoekresultaten_list:
+      try:
+        if not "beschikbaar" in res.find('span', {'class': 'bouwvorm'}).get_text(strip=True):
+          continue
+
+        # Extract the address and city
+        objectgegevens = res.find('div', {'class': 'objectgegevens'}).next_element.strip()
+        address, city = objectgegevens.split(' - ')
+
+        # Extract the price
+        vraagprijs = res.find('span', {'class': 'vraagprijs'}).get_text(strip=True)
+        price = float(vraagprijs.replace('€', '').replace('per maand', '').strip())
+
+        # Extract the link
+        link = res.find('a', {'class': 'a'}).get('href')
+
+
+        home = Home(agency=self.agency, city=city, address=address, url=link_base_url + link, price=price)
+        homes.append(home)
+      except:
+        self.parseFailSingleHome(res)
+        continue
+
+    return homes
+
 class YourHouseNl(Target):
   agency = "yourhousenl"
 
@@ -2224,8 +2292,9 @@ targets = [
   Starthousing(),
   Rotsvast(),
   Makelaardijstek(),
-  Vbo(),
-  Rebohuurwoning(),
+  VanDerLinden(),
+  # Vbo(),
+  # Rebohuurwoning(),
   SelectAHouse(),
   WoningnetEemvallei(),
   IkWilHuren(),
