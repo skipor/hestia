@@ -7,7 +7,7 @@ logging.basicConfig(
 from targets import *
 
 
-target = VanDerLinden()
+target = IkWilHuren()
 
 homes = target.testScrape()
 # print(homes)

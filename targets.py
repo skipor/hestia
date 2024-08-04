@@ -2278,7 +2278,7 @@ class WonenBijBouwInvest(Target):
 targets = [
   Vesteda(), # NOTE(skipor): custom filter turned in URL
   # Funda(), # TODO(skipor): Temporary, until filters implemented
-  Spotmakelaardij(),
+  # Spotmakelaardij(),
   Vbtverhuurmakelaars(),
   # Huurwoningennl(), # TODO(skipor): Temporary, until filters implemented
   DeKeizer(),
@@ -2294,10 +2294,10 @@ targets = [
   Makelaardijstek(),
   VanDerLinden(),
   # Vbo(),
-  # Rebohuurwoning(),
+  # Rebohuurwoning(), # TODO: Bot defence causes capcha
   SelectAHouse(),
   WoningnetEemvallei(),
-  IkWilHuren(),
+  # IkWilHuren(), # TODO: Bot defence causes capcha
   WonenBijBouwInvest(),
 ]
 
